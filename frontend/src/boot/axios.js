@@ -1,9 +1,12 @@
 import { boot } from 'quasar/wrappers'
 import axios from 'axios'
 import { reactive } from 'vue'
-import { sumBy } from 'lodash'
+import { sumBy, sortBy } from 'lodash'
 import Artyom from 'artyom.js'
 import qs from 'qs'
+
+import VueChartkick from 'vue-chartkick'
+import 'chartkick/chart.js'
 
 // const { customAlphabet } = require('nanoid')
 import { customAlphabet } from 'nanoid'
@@ -41,12 +44,16 @@ const $global = reactive({
   loading: false,
   cartIsOpen: false,
   ordersIsOpen: false,
+  salesIsOpen: false,
   profileMenuIsOpen: false,
   orders: [],
-  placingOrder: false
+  placingOrder: false,
+  sales: { byDay: {}, byMonth: {}, today: 0 }
 })
 
 export default boot(({ app }) => {
+  app.use(VueChartkick)
+
   const artyom = new Artyom()
 
   artyom.initialize({
@@ -82,7 +89,8 @@ export default boot(({ app }) => {
   app.config.globalProperties.$chupipay = artyom
   app.config.globalProperties.$qs = qs
   app.config.globalProperties.$lodash = {
-    sumBy
+    sumBy,
+    sortBy
   }
 
   app.config.globalProperties.$nanoid = nanoid

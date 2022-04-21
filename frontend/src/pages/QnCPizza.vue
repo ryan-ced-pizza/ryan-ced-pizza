@@ -114,7 +114,15 @@ onMounted(async () => {
   const query = {
     populate: ['images']
   }
-  const { data: { data: items } } = await $api.get('/items?' + $qs.stringify(query))
+  let items = null
+  try {
+    const { data: { data: itemss } } = await $api.get('/items?' + $qs.stringify(query))
+    items = itemss
+  } catch (error) {
+    delete $api.defaults.headers.common.Authorization
+    const { data: { data: itemsss } } = await $api.get('/items?' + $qs.stringify(query))
+    items = itemsss
+  }
   console.log(items)
   $global.items = items.map(i => ({
     ...i.attributes,

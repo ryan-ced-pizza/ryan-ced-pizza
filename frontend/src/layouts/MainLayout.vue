@@ -2,10 +2,39 @@
   <q-layout view="lHh Lpr lFf">
     <q-header elevated>
       <q-toolbar class="bg-deep-orange-9 text-white">
-        <q-btn flat round dense icon="assignment_ind" />
+        <q-btn flat round dense icon="local_pizza" @click="about">
+          <q-popup-proxy>
+            <q-card style="min-width: 300px;">
+              <q-card-section class="row">
+                <div class="text-h6 col row items-center q-gutter-xs">
+                  <q-icon name="info" />
+                  <div>About</div>
+                  <q-space />
+                  <!-- <q-btn label="admin" @click="$popupCenter({url: 'https://ccd-mirdc.ap.ngrok.io/admin', title: 'Admin', w: 900, h: 600})" /> -->
+                </div>
+                <q-space />
+                <!-- <q-btn v-show="$global.cart.legnth" @click="clearCart" class="bg-grey-2" size="sm" flat label="clear" v-close-popup/> -->
+              </q-card-section>
+
+              <q-separator />
+
+              <q-card-section style="max-height: 50vh" class="scroll">
+                <div class="column col q-gutter-md q-ma-md">
+                  Ryan and Ced Pizza
+                  <br />It's more delicious when we share the box.
+                  <br />We baked everyday. We are proud to introduce our homemade Ryan and Ced Pizza with fresh and hot where taste never ends.
+                  <br />Founded on 21th August 2021. Located in Barangay 165 Navaluan, Mangaldan, Pangasinan.
+                  <br />Let's enjoy eating delicious pizza!
+                </div>
+              </q-card-section>
+
+              <q-separator />
+            </q-card>
+          </q-popup-proxy>
+        </q-btn>
         <q-toolbar-title>
           <!-- {{ state.task }} -->
-          Adutukart
+          Ryan & Ced Pizza
         </q-toolbar-title>
         <div class="row q-gutter-sm">
           <q-btn icon="shopping_cart" round dense flat >
@@ -100,9 +129,53 @@
             </q-popup-proxy>
           </q-btn>
           <q-btn v-if="!$global.user" @click="$popupCenter({url: $api.defaults.baseURL + '/connect/google', title: 'Manage Account', w: 900, h: 600})" flat round dense icon="person" class="q-mr-xs" />
-          <q-btn v-else color="white" class="text-red" round dense label="TB" >
+          <q-btn v-else color="white" class="text-red" round dense :label="$global.user.username.split(/[.\-_]/).map(str => str.charAt(0)).join('')" >
             <q-popup-proxy breakpoint="0" v-model="$global.profileMenuIsOpen">
               <q-list class="bg-white">
+                <q-item v-if="['timi.boado', 'fgutierez'].includes($global.user.username)" clickable v-ripple>
+                  <q-item-section>Sales</q-item-section>
+                  <q-item-section avatar>
+                    <q-icon color="red" name="monetization_on" />
+                  </q-item-section>
+                  <q-popup-proxy v-model="$global.salesIsOpen">
+                    <q-card style="min-width: 300px;">
+                      <q-card-section class="row">
+                        <div class="text-h6 col row items-center q-gutter-xs">
+                          <q-icon name="delivery_dining" />
+                          <div>Sales</div>
+                          <q-space />
+                          <q-btn label="admin" @click="$popupCenter({url: 'https://ccd-mirdc.ap.ngrok.io/admin', title: 'Admin', w: 900, h: 600})" />
+                        </div>
+                        <q-space />
+                        <!-- <q-btn v-show="$global.cart.legnth" @click="clearCart" class="bg-grey-2" size="sm" flat label="clear" v-close-popup/> -->
+                      </q-card-section>
+
+                      <q-separator />
+
+                      <q-card-section style="max-height: 50vh" class="scroll">
+                        <div class="column col q-gutter-md q-ma-md">
+                          By Day
+                          <line-chart :data="$global.sales.byDay"></line-chart>
+                        </div>
+                        <div class="column col q-gutter-md q-ma-md">
+                          By Month
+                          <line-chart :data="$global.sales.byMonth"></line-chart>
+                        </div>
+                      </q-card-section>
+
+                      <q-separator />
+
+                      <!-- <q-card-actions align="right" class="q-gutter-md" v-show="$global.cart.length">
+                        <div class="text-subtitle1">
+                          Total:
+                          <span class="text-red text-h6">{{$lodash.sumBy($global.cart, ci => ci.quantity * ci.price).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}}</span>
+                        </div>
+                        <q-btn flat label="Decline" color="primary" v-close-popup />
+                        <q-btn label="Confirm" color="primary" @click="confirmOrder" :loading="$global.loading" />
+                      </q-card-actions> -->
+                    </q-card>
+                  </q-popup-proxy>
+                </q-item>
                 <q-item clickable v-ripple>
                   <q-item-section>Orders</q-item-section>
                   <q-item-section avatar>
@@ -267,12 +340,26 @@ const timer = setInterval(async () => {
     const { data: { data } } = await $api.get('/orders?' + $qs.stringify(query))
     $global.orders = data.map(o => ({ id: o.id, ...o.attributes }))
     console.log($global.orders, $qs.stringify(query))
+
+    const { data: sales } = await $api.get('/orders/getSales')
+    console.log('sales', sales)
+    $global.sales = sales
   }
 }, 2000)
 
 onUnmounted(() => {
   clearInterval(timer)
 })
+
+function about () {
+  $chupipay.say(`
+    Ryan and Ced Pizza
+    It's more delicious when we share the box.
+    We baked everyday. We are proud to introduce our homemade Ryan & Ced Pizza with fresh and hot where taste never ends.
+    Founded on 21th August 2021 Located in Barangay 165 Navaluan Mangaldan Pangasinan.
+    Let's enjoy eating delicious pizza!
+  `)
+}
 
 function clearCart () {
   $global.cart = []
@@ -290,34 +377,46 @@ async function confirmOrder () {
   LocalStorage.set('addresss', $global.address)
   LocalStorage.set('landmarkk', $global.landmark)
   LocalStorage.set('contactNoo', $global.contactNo)
-
-  const order = {
-    data: {
-      refNo: new Date().getFullYear() + '-' + $nanoid(),
-      items: $global.cart.map(c => c.id),
-      itemsQuantity: $global.cart,
-      address: $global.address,
-      landmark: $global.landmark,
-      contactNo: $global.contactNo,
-      user: $global.user.id
-    }
-  }
-
-  console.log('order', order)
-
   try {
+    const order = {
+      data: {
+        refNo: new Date().getFullYear() + '-' + $nanoid(),
+        items: $global.cart.map(c => c.id),
+        itemsQuantity: $global.cart,
+        address: $global.address,
+        landmark: $global.landmark,
+        contactNo: $global.contactNo,
+        user: $global.user.id
+      }
+    }
+
+    console.log('order', order)
+
     await $api.post('/orders', order)
     clearCart()
     $global.cartIsOpen = false
 
     $q.notify({
       message: `${order.data.refNo} order placed`,
-      color: 'purple'
+      color: 'positive'
     })
+
+    $chupipay.say(`order is on queue. You reference is ${order.data.refNo}. you may track its status.`)
   } catch (error) {
     console.log(error)
+    $q.notify({
+      message: 'Please login',
+      color: 'purple'
+    })
+
+    $chupipay.say('Please login first')
   }
   $global.loading = false
+}
+
+function getSales () {
+  $global.salesIsOpen = $global.profileMenuIsOpen = true
+  $chupipay.say('our total sales is ' + $global.sales.today)
 }
 
 function review () {
@@ -338,14 +437,20 @@ function review () {
 
 const commands = [
   {
-    indexes: ['review my cart', 'check my cart', 'review cart', 'check cart', 'cheque cart', 'cheque my cart', 'open cart', 'open my cart'], // These spoken words will trigger the execution of the command
+    indexes: ['hi said', 'hello said', 'i said', 'hello ryan', 'i ryan', 'hi ryan'], // These spoken words will trigger the execution of the command
+    action: function () { // Action to be executed when a index match with spoken word
+      $chupipay.say('yes?')
+    }
+  },
+  {
+    indexes: ['said review my cart', 'said check my cart', 'said review cart', 'said check cart', 'said cheque cart', 'said cheque my cart', 'said open cart', 'said open my cart'], // These spoken words will trigger the execution of the command
     action: function () { // Action to be executed when a index match with spoken word
       console.log('review my cart')
       review()
     }
   },
   {
-    indexes: ['place order'], // These spoken words will trigger the execution of the command
+    indexes: ['said place order'], // These spoken words will trigger the execution of the command
     action: function () { // Action to be executed when a index match with spoken word
       $global.placingOrder = true
       $chupipay.say('please confirm your delivery address and contact info.')
@@ -353,16 +458,28 @@ const commands = [
   }
 ]
 $chupipay.addCommands(commands)
-$chupipay.on(['Good morning']).then(function (i) {
-  console.log('Triggered')
+$chupipay.on(['said good morning']).then(function (i) {
+  console.log('good morning')
 })
 
-$chupipay.on(['what is the menu?', 'what\'s the menu?']).then(function (i) {
+$chupipay.on(['said what is the menu', 'said what is the menu?', 'said what\'s the menu?', 'said what\'s the menu']).then(function (i) {
   const msg = $global.items.map(i => {
     return `${i.name}. ${i.price} Pesos`
   }).join('. ')
 
   $chupipay.say(msg)
+})
+
+$chupipay.on([
+  'said sales today',
+  'said what is our sales today',
+  'said our sales today',
+  'said total sales today',
+  'said what is our total sales',
+  'said total sales today',
+  'send total sales today'
+]).then((i) => {
+  getSales()
 })
 
 </script>

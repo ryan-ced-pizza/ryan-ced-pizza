@@ -1,7 +1,9 @@
 {
+  "short_name": "Ryan&Ced Pizza",
+  "name": "Ryan & Ced Pizza",
   "orientation": "portrait",
-  "background_color": "#ffffff",
-  "theme_color": "#027be3",
+  "background_color": "#3E2723",
+  "theme_color": "#3E2723",
   "icons": [
     {
       "src": "icons/icon-128x128.png",
